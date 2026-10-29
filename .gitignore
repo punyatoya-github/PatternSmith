@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.png
+.venv/
+.vscode/
+.idea/
+.env
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+# Local runtime data (later weeks)
+var/
+*.sqlite3
+# Your own test photos stay local; synthetic ones are committed
+data/test_images/*
+!data/test_images/README.md
+!data/test_images/synthetic/
