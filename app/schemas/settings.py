@@ -10,13 +10,15 @@ from app.core import config
 
 FabricCount = Literal[11, 14, 16, 18]
 
-# Complexity slider presets (Phase 1 plan, Section 6.2): level -> (stitch width, colors)
-CROSS_STITCH_LEVELS: dict[int, tuple[int, int]] = {
-    1: (40, 8),
-    2: (60, 12),
-    3: (100, 20),
-    4: (150, 30),
-    5: (200, 40),
+# Complexity slider presets (Phase 1 plan, Section 6.2):
+# level -> (stitch width, colors, cleanup strength). Simpler patterns clean up harder, because a
+# lone stitch matters more on a small chart; detailed patterns keep more fine detail.
+CROSS_STITCH_LEVELS: dict[int, tuple[int, int, int]] = {
+    1: (40, 8, 3),
+    2: (60, 12, 3),
+    3: (100, 20, 2),
+    4: (150, 30, 2),
+    5: (200, 40, 1),
 }
 
 
@@ -44,6 +46,7 @@ class CraftSettings(BaseModel):
     fabric_count: FabricCount = 14
     strands: int = Field(2, ge=1, le=6)
     palette: Literal["dmc"] = "dmc"
+    cleanup: int = Field(2, ge=0, le=3)  # 0 off, 1 lone stitches, 2 up to 3, 3 up to 7 stitches
     crop: CropBox | None = None
     seed: int = 42
 
@@ -52,6 +55,6 @@ class CraftSettings(BaseModel):
         """Build settings from the 1 to 5 complexity slider; any field can be overridden."""
         if level not in CROSS_STITCH_LEVELS:
             raise ValueError(f"level must be one of {sorted(CROSS_STITCH_LEVELS)}")
-        width, colors = CROSS_STITCH_LEVELS[level]
-        values = {"width": width, "colors": colors, **overrides}
+        width, colors, cleanup = CROSS_STITCH_LEVELS[level]
+        values = {"width": width, "colors": colors, "cleanup": cleanup, **overrides}
         return cls(**values)

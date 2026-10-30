@@ -33,10 +33,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--width", type=int, help="pattern width in stitches (overrides --level)")
     p.add_argument("--colors", type=int, help="maximum number of colors (overrides --level)")
     p.add_argument("--fabric-count", type=int, choices=[11, 14, 16, 18], default=14)
+    p.add_argument(
+        "--cleanup", type=int, choices=range(4), help="cleanup strength 0 (off) to 3 (strongest)"
+    )
     p.add_argument("--strands", type=int, default=2)
     p.add_argument("--crop", type=_parse_crop, help="left,top,right,bottom as fractions 0 to 1")
     p.add_argument("--out", type=Path, default=Path("pattern.png"), help="preview image path")
     p.add_argument("--json", type=Path, dest="json_out", help="also save the pattern as JSON")
+    p.add_argument("--pdf", type=Path, help="also write a printable PDF (needs reportlab)")
+    p.add_argument("--title", default="Cross Stitch Pattern", help="title used in the PDF")
+    p.add_argument("--paper", choices=["a4", "letter"], default="a4")
+    p.add_argument(
+        "--pdf-style",
+        choices=["tint", "mono"],
+        default="tint",
+        help="tint: symbols on a light color tint; mono: symbols on white (best for B&W printers)",
+    )
     p.add_argument("--cell", type=int, default=12, help="preview cell size in pixels")
     p.add_argument("--no-symbols", action="store_true", help="omit symbols in the preview")
     return p
@@ -50,6 +62,8 @@ def main(argv: list[str] | None = None) -> int:
         overrides["width"] = args.width
     if args.colors is not None:
         overrides["colors"] = args.colors
+    if args.cleanup is not None:
+        overrides["cleanup"] = args.cleanup
     try:
         if args.level is not None:
             settings = CraftSettings.from_level(args.level, **overrides)
@@ -67,6 +81,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.json_out:
         args.json_out.write_text(result.model_dump_json(), encoding="utf-8")
+
+    if args.pdf:
+        try:
+            from app.services.pdf.cross_stitch_pdf import build_cross_stitch_pdf
+        except ImportError:
+            print("error: PDF export needs reportlab: pip install reportlab", file=sys.stderr)
+            return 1
+        args.pdf.write_bytes(
+            build_cross_stitch_pdf(result, title=args.title, paper=args.paper, style=args.pdf_style)
+        )
+        print(f"PDF -> {args.pdf}")
 
     size = finished_size(result.width, result.height, settings.fabric_count)
     print(f"Pattern: {result.width} x {result.height} stitches, {len(result.palette)} colors")

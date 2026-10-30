@@ -87,7 +87,7 @@ def test_result_validation_catches_bad_index(noise):
 
 def test_timings_recorded(noise):
     result = gen.generate(noise, CraftSettings(width=30, colors=6))
-    assert {"prepare", "quantize", "map_threads", "total"} <= set(result.timings_ms)
+    assert {"prepare", "quantize", "map_threads", "cleanup", "total"} <= set(result.timings_ms)
 
 
 def test_preview_dimensions_and_symbols(noise):
@@ -107,13 +107,24 @@ def test_inventory_matches_palette(noise):
 
 def test_settings_levels():
     assert (CraftSettings.from_level(1).width, CraftSettings.from_level(1).colors) == (40, 8)
+    assert (
+        CraftSettings.from_level(1).cleanup > CraftSettings.from_level(5).cleanup
+    )  # simpler = stronger
+    assert CraftSettings.from_level(3, cleanup=0).cleanup == 0
     assert CraftSettings.from_level(5, fabric_count=18).fabric_count == 18
     with pytest.raises(ValueError):
         CraftSettings.from_level(9)
 
 
 def test_settings_bounds():
-    for bad in ({"width": 5}, {"width": 999}, {"colors": 1}, {"colors": 41}, {"fabric_count": 13}):
+    for bad in (
+        {"width": 5},
+        {"width": 999},
+        {"colors": 1},
+        {"colors": 41},
+        {"fabric_count": 13},
+        {"cleanup": 4},
+    ):
         with pytest.raises(ValidationError):
             CraftSettings(**bad)
 

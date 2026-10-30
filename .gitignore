@@ -1,9 +1,8 @@
 __pycache__/
 *.pyc
 *.png
+.vscode
 .venv/
-.vscode/
-.idea/
 .env
 .pytest_cache/
 .ruff_cache/

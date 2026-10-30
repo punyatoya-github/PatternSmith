@@ -48,3 +48,25 @@ attribution in `data/palettes/ATTRIBUTION.md`. The data is marked `cross-checked
 One full stitch = two front diagonals plus about two stitch lengths of travel on the back, times a
 1.5 waste factor, for six-strand, 8 m skeins. It is labelled approximate and should be calibrated
 against a published calculator before launch.
+
+## Cleanup works per cell, from the outside in
+Cleanup finds 4-connected same-color regions. Every cell in a region below the size threshold moves
+to the visually closest (CIEDE2000) *different* color among its eight neighbours that belongs to a
+large region; cells deeper inside a small island follow on the next pass. It is fully vectorised
+with NumPy shifts, so it costs roughly 3 to 190 ms. Lesson learned: same-color neighbours must be
+excluded as donors, otherwise a lone stitch touching a big region of its own color diagonally
+"merges" into itself and never changes (regression test in `tests/test_cleanup.py`).
+
+## Cleanup strength follows the complexity level
+Simpler patterns clean harder (levels 1 and 2: remove regions up to 7 stitches; level 3 and 4: up
+to 3; level 5: lone stitches only), because one stray stitch matters more on a small chart.
+
+## PDF design
+- Chart pages hold a multiple of 10 columns and rows, so page edges fall on bold lines.
+- Two styles: `tint` (symbol on a 62% tint of the thread color) and `mono` (symbol on white). The
+  tint is always light, so the black symbol stays readable even on dark threads.
+- Small patterns that fit on one page get larger cells (up to 16 pt).
+- No row/column overlap between pages; absolute row and column numbers, "continues right/down"
+  page pointers and a minimap navigate instead. Revisit if testers get lost.
+- Only ASCII text is drawn with built-in fonts, which avoids missing-glyph boxes.
+

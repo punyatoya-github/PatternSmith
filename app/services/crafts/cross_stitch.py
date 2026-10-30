@@ -12,6 +12,7 @@ from app.schemas.settings import CraftSettings
 from app.services.crafts.render import render_grid_preview
 from app.services.crafts.sizing import estimate_skeins
 from app.services.crafts.symbols import symbol_for
+from app.services.imaging.cleanup import MIN_REGION_AREA, clean_grid
 from app.services.imaging.color import ciede2000_matrix, rgb_to_lab
 from app.services.imaging.io import crop_image, downsample_to_width
 from app.services.imaging.quantize import kmeans_centers
@@ -57,7 +58,17 @@ class CrossStitchGenerator:
         pixel_thread = nearest[inverse].reshape(h, w)
         lap("map_threads")
 
-        # 5. Compact to the threads actually used, most-used first (stable, so deterministic)
+        # 5. Basic cleanup on a compact local grid (indices 0..m-1), then re-compact because
+        #    cleanup can remove a color entirely
+        local_threads, local_grid = np.unique(pixel_thread, return_inverse=True)
+        local_grid = local_grid.reshape(h, w)
+        local_grid = clean_grid(
+            local_grid, palette.lab[local_threads], MIN_REGION_AREA[settings.cleanup]
+        )
+        pixel_thread = local_threads[local_grid]
+        lap("cleanup")
+
+        # 6. Compact to the threads actually used, most-used first (stable, so deterministic)
         used, used_counts = np.unique(pixel_thread, return_counts=True)
         order = np.argsort(-used_counts, kind="stable")
         used, used_counts = used[order], used_counts[order]

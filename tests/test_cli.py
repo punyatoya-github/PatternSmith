@@ -29,3 +29,15 @@ def test_cli_reports_invalid_settings(tmp_path, bands, capsys):
     src.write_bytes(encode(bands))
     assert main([str(src), "--width", "5", "--out", str(tmp_path / "o.png")]) == 1
     assert "error:" in capsys.readouterr().err
+
+
+def test_cli_writes_pdf(tmp_path, bands, capsys):
+    src = tmp_path / "in.png"
+    src.write_bytes(encode(bands))
+    pdf = tmp_path / "pattern.pdf"
+    code = main(
+        [str(src), "--width", "30", "--colors", "3", "--out", str(tmp_path / "o.png"),
+         "--pdf", str(pdf), "--title", "Bands", "--paper", "letter", "--pdf-style", "mono"]
+    )  # fmt: skip
+    assert code == 0
+    assert pdf.read_bytes().startswith(b"%PDF")
