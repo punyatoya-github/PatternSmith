@@ -22,5 +22,7 @@ jobs:
         run: ruff format --check .
       - name: Tests
         run: pytest --cov=app --cov-report=term-missing
+      - name: Generate benchmark images
+        run: python scripts/make_test_images.py
       - name: Benchmark (performance budget)
         run: python scripts/benchmark.py

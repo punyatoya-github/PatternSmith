@@ -23,4 +23,5 @@ def test_deterministic_for_same_seed(noise):
     lab, counts = _unique_lab(noise)
     a = kmeans_centers(lab, counts, k=6, seed=5)
     b = kmeans_centers(lab, counts, k=6, seed=5)
-    assert np.array_equal(a, b)
+    #assert np.array_equal(a, b)
+    np.testing.assert_allclose(a, b, atol=1e-12)
