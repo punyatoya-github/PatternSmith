@@ -70,3 +70,41 @@ to 3; level 5: lone stitches only), because one stray stitch matters more on a s
   page pointers and a minimap navigate instead. Revisit if testers get lost.
 - Only ASCII text is drawn with built-in fonts, which avoids missing-glyph boxes.
 
+## One app: REST API under /api, Gradio UI at /
+FastAPI owns the API and Gradio is mounted on the same app, so there is one process and one
+deployment. Both call `app/services/generation.py`, and the UI handlers are plain functions. A React
+front end later only needs the HTTP API. Note the API cannot be listed from `app.routes` directly:
+current FastAPI wraps included routers, so use `/docs` or `/openapi.json` to see the endpoints.
+
+## Gradio 6 specifics
+Gradio 6 takes `theme` and `css` in `mount_gradio_app` / `launch`, not in `Blocks(...)`, and
+`gr.Image` uses `buttons=[...]` instead of the old fullscreen/download flags. `ssr_mode=False`
+avoids needing a Node server. The `gradio>=6.0` lower bound in `pyproject.toml` matters.
+
+## Crop controls: shape, zoom and position
+Instead of four edge sliders, the crop panel works like a phone photo editor: choose a shape
+(whole photo, 1:1, 4:5, 2:3, 3:2, 16:9), zoom in, then move the frame. It maps to the same
+fractional `CropBox` the engine already used, works with a thumb on a phone, and has a live preview.
+A drag-the-box tool would be nicer and is a candidate for the custom front end.
+
+## The UI makes the pattern and the PDF in one click
+"Make pattern" runs the pattern step and then the PDF step (`.success` chaining), so the file is
+ready as soon as the chart is. "Update PDF" rebuilds it after the PDF options change, without
+regenerating the pattern.
+
+## Legend as one chip column
+The thread list merges symbol and colour into one chip: a swatch in the real thread colour with its
+chart symbol inside (white or black ink by luminance). It saves a column, and the measured legend
+width went from 325 px to about 270 px, which is what lets it fit phone screens from 360 px.
+Lesson: measure overflow in a real browser at several widths rather than judging a screenshot.
+
+## Validation bounds on pattern JSON
+The API accepts pattern JSON back from clients (for preview and PDF), so `GridPatternResult` is
+bounded (width, height, number of colors), previews are capped at 3000 px on a side, and PDF titles
+are made safe for the built-in Latin-1 fonts.
+
+## Test caveat worth remembering
+Mutating a file in place and restoring it within the same second can leave stale `.pyc` bytecode if
+the two versions have the same length (python checks size and mtime). It made correct code look
+broken once. Clear `__pycache__` after manual mutation experiments.
+

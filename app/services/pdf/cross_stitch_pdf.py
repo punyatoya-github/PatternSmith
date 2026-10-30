@@ -410,5 +410,10 @@ def build_cross_stitch_pdf(
     paper: Paper = "a4",
     style: PdfStyle = "tint",
 ) -> bytes:
-    """Build the full pattern PDF and return its bytes."""
-    return _Builder(result, title, paper, style).build()
+    """Build the full pattern PDF and return its bytes.
+
+    The built-in PDF fonts only cover Latin-1, so characters outside it (emoji, CJK) in the title
+    are replaced by "?" instead of drawing as black boxes.
+    """
+    safe_title = " ".join(title.split()).encode("latin-1", "replace").decode("latin-1")
+    return _Builder(result, safe_title or "Cross Stitch Pattern", paper, style).build()

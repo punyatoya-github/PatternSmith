@@ -6,6 +6,7 @@ from __future__ import annotations
 import numpy as np
 from pydantic import BaseModel, Field, model_validator
 
+from app.core import config
 from app.schemas.settings import CraftSettings
 
 
@@ -30,10 +31,10 @@ class InventoryItem(BaseModel):
 class GridPatternResult(BaseModel):
     schema_version: int = 1
     craft_id: str = "cross_stitch"
-    width: int = Field(ge=1)
-    height: int = Field(ge=1)
+    width: int = Field(ge=1, le=config.MAX_STITCH_WIDTH)
+    height: int = Field(ge=1, le=config.MAX_STITCH_HEIGHT)
     grid: list[list[int]]
-    palette: list[PaletteEntry]
+    palette: list[PaletteEntry] = Field(min_length=1, max_length=config.MAX_COLORS)
     settings: CraftSettings
     timings_ms: dict[str, float] = Field(default_factory=dict)
 
